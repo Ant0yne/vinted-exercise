@@ -225,7 +225,7 @@ router.get("/offers", async (req, res) => {
 /**
  *  Return the offers (according to the id in params) from the DB
  */
-router.get("/offers/:id", async (req, res) => {
+router.get("/offer/:id", async (req, res) => {
 	try {
 		const offerID = req.params.id;
 
