@@ -106,22 +106,37 @@ router.post(
 			newOffer.product_image = filMoveToFolder;
 
 			if (req.files.pictures) {
-				const arrayPictures = req.files.pictures;
-				const picturesFilesPromises = arrayPictures.map((picture) => {
-					return cloudinaryFunc.deleteCreateFiles(picture, null);
-				});
-				const picturesToFile = await Promise.all(picturesFilesPromises);
+				console.log(Array.isArray(req.files.pictures));
+				if (Array.isArray(req.files.pictures)) {
+					const arrayPictures = [...req.files.pictures];
+					const picturesFilesPromises = arrayPictures.map((picture) => {
+						return cloudinaryFunc.deleteCreateFiles(picture, null);
+					});
+					const picturesToFile = await Promise.all(picturesFilesPromises);
 
-				const picturesFolderPromises = picturesToFile.map((picture) => {
-					return cloudinaryFunc.createFolder(
+					const picturesFolderPromises = picturesToFile.map((picture) => {
+						return cloudinaryFunc.createFolder(
+							newOffer._id,
+							picture.public_id,
+							offerFolderRootPath
+						);
+					});
+
+					const picturesToUpload = await Promise.all(picturesFolderPromises);
+					newOffer.product_pictures = picturesToUpload;
+				} else {
+					const fileUploaded = await cloudinaryFunc.deleteCreateFiles(
+						req.files.pictures,
+						null
+					);
+
+					const fileMoveToFolder = await cloudinaryFunc.createFolder(
 						newOffer._id,
-						picture.public_id,
+						fileUploaded.public_id,
 						offerFolderRootPath
 					);
-				});
-
-				const picturesToUpload = await Promise.all(picturesFolderPromises);
-				newOffer.product_pictures = picturesToUpload;
+					newOffer.product_pictures = fileMoveToFolder;
+				}
 			}
 
 			// console.log("Etape 5 : ", filMoveToFolder);
