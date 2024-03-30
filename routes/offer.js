@@ -142,8 +142,10 @@ router.post(
  */
 router.get("/offers", async (req, res) => {
 	try {
-		let { title, description, priceMin, priceMax, sort, page } = req.query;
-		const limitPerPage = 5;
+		let { title, description, priceMin, priceMax, sort, page, limit } =
+			req.query;
+		// const limitPerPage = 5;
+		const limitPerPage = limit;
 		let sortFinalValue = "desc";
 		const skipFinalValue = (page - 1) * limitPerPage;
 
