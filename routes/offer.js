@@ -1,9 +1,11 @@
+"use strict";
+
 const express = require("express");
 const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
 const User = require("../models/User");
 const Offer = require("../models/Offer");
-// return the document (from MDB) of the user in req.user
+// return the user document (from MDB) of the user in req.user
 const isAuthenticated = require("../middlewares/isAuthenticated");
 const cloudinaryFunc = require("../functions/cloudinaryFunc");
 const isObjectPopulate = require("../functions/isObjectPopulate");

@@ -1,3 +1,5 @@
+"use strict";
+
 const express = require("express");
 const fileUpload = require("express-fileupload");
 const SHA256 = require("crypto-js/sha256");
@@ -28,8 +30,7 @@ router.post("/user/signup", fileUpload(), async (req, res) => {
 			typeof passwordBody !== "string"
 		) {
 			return res.status(400).json({
-				message:
-					"Please fill all the required information fields (with the right parameters types).",
+				message: "Missing parameters",
 			});
 		} else if (emailBody.split("@").length > 2) {
 			return res.status(400).json({
@@ -37,8 +38,7 @@ router.post("/user/signup", fileUpload(), async (req, res) => {
 			});
 		} else if (userDoc !== null) {
 			return res.status(409).json({
-				message:
-					"This email address is already used for another account on Vinted.",
+				message: "This email already has an account",
 			});
 		}
 
@@ -92,12 +92,11 @@ router.post("/user/login", async (req, res) => {
 			typeof passwordBody !== "string"
 		) {
 			return res.status(400).json({
-				message:
-					"Please fill all the required information fields (with the right parameters types).",
+				message: "User not found",
 			});
 		} else if (userDoc === null) {
 			return res.status(400).json({
-				message: "This email address is not linked to any account on Vinted.",
+				message: "User not found",
 			});
 		}
 
