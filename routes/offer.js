@@ -235,9 +235,11 @@ router.get("/offer/:id", async (req, res) => {
 			});
 		}
 
-		const offerByID = await Offer.findById(offerID)
-			.populate("owner", "account -_id")
-			.select("product_name product_description product_price owner -_id");
+		const offerByID = await Offer.findById(offerID).populate(
+			"owner",
+			"account -_id"
+		);
+		// .select("product_name product_description product_price owner -_id product_details product ");
 
 		if (!offerByID) {
 			return res
