@@ -189,6 +189,7 @@ Here is the _params_ parameters to send with the request :
 
 ## Work in progress
 
+- fix the bug when sending only one picture (not an array)
 - delete all the offer's picture when the offer is deleted
 - change an offer's pictures (add one or more, delete one or more)
 - ignore case for username and email
