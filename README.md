@@ -189,9 +189,10 @@ Here is the _params_ parameters to send with the request :
 
 ## Work in progress
 
+- comment code
 - delete all the offer's picture when the offer is deleted
 - change an offer's pictures (add one or more, delete one or more)
 - ignore case for username and email
 - add password rules (uppercase, lowercase, symbol, ...)
 - check the type of file (img? video? ...?)
-- clean the code (repetition, create some module, ...)
+- dryer code (repetition, create some module, ...)

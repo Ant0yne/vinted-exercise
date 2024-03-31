@@ -2,9 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+
+// ROUTES
 const userRoutes = require("./routes/user");
 const offerRoutes = require("./routes/offer");
 
+// A try catch to contact the DDB
 mongoose
 	.connect(process.env.MONGODB_URI)
 	.then(() => {

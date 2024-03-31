@@ -13,22 +13,3 @@ const User = mongoose.model("User", {
 });
 
 module.exports = User;
-
-// USER PLACEHOLDERS
-// {
-//     "username": "Eileen",
-//     "email": "eileenthecrow@yharnam.bb",
-//     "password": "Ahuntermusthunt"
-// }
-
-// {
-//     "username": "djura",
-//     "email": "djuratheretiredhunter@yharnam.bb",
-//     "password": "They'renotbeasts.They'repeople1261"
-// }
-
-// {
-//     "username": "Valtr",
-//     "email": "valtrMasterOfTheLeague@yharnam.bb",
-//     "password": "allverminearetobecrushed3617"
-// }
