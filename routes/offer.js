@@ -139,9 +139,9 @@ router.post(
 							offerFolderRootPath
 						);
 					});
+					const picturesToUpload = await Promise.all(picturesFolderPromises);
 
 					// Add them to offer created in DDB
-					const picturesToUpload = await Promise.all(picturesFolderPromises);
 					newOffer.product_pictures = picturesToUpload;
 				} else {
 					// Same process but if there is only one picture
@@ -244,25 +244,25 @@ router.get("/offers", async (req, res) => {
 	}
 });
 
-/**
- *  Return the offers (according to the id in params) from the DB
- */
+// Display an offer according to the id in params -------------------------------------------------------------------
 router.get("/offer/:id", async (req, res) => {
 	try {
 		const offerID = req.params.id;
 
+		// Check if the ID format is valid
 		if (mongoose.isObjectIdOrHexString(offerID) === false) {
 			return res.status(400).json({
 				message: "Please use a valid Id.",
 			});
 		}
 
+		// Search for an offer with this ID
 		const offerByID = await Offer.findById(offerID).populate(
 			"owner",
 			"account -_id"
 		);
-		// .select("product_name product_description product_price owner -_id product_details product ");
 
+		// Return error if no offer found
 		if (!offerByID) {
 			return res
 				.status(400)
@@ -274,11 +274,10 @@ router.get("/offer/:id", async (req, res) => {
 	}
 });
 
-/**
- * Modify an existing offer
- */
+// Modify an existing offer ------------------------------------------------------------------------------------------------
 router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 	try {
+		// Check if there is at least one modification
 		if (isObjectPopulate(req.body) === false && req.files === undefined) {
 			return res.status(400).json({
 				message:
@@ -286,24 +285,31 @@ router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 			});
 		}
 
+		// The body and params parameters
 		const { title, description, price, condition, city, brand, size, color } =
 			req.body;
 		const offerID = req.params.id;
 
+		// Check if the ID format is valid
 		if (mongoose.isObjectIdOrHexString(offerID) === false) {
 			return res.status(400).json({
 				message: "Please use a valid Id.",
 			});
 		}
+
+		// Search for an offer with this ID
 		const offerToModify = await Offer.findOne({ _id: offerID }).populate(
 			"owner"
 		);
 
+		// If ther is none -> error
 		if (!offerToModify) {
 			return res.status(404).json({ message: "This offer doesn't exist." });
+			// If the user's token is not linked to this offer -> error
 		} else if (offerToModify.owner.token !== req.user.token) {
 			return res.status(401).json({ error: "Unauthorized to do this action." });
 		} else {
+			// Check if the title modif is right type and length and update it
 			if (title) {
 				if (typeof title === "string" && title.length <= titleMaxStrLength) {
 					offerToModify.product_name = title;
@@ -314,6 +320,8 @@ router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 					});
 				}
 			}
+
+			// Check if the description modif is right type and length and update it
 			if (description) {
 				if (
 					typeof description === "string" &&
@@ -327,6 +335,8 @@ router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 					});
 				}
 			}
+
+			// Check if the price modif is right type and max value and update it
 			if (price) {
 				if (!isNaN(price) && price <= maxPriceOfferGlobal) {
 					offerToModify.product_price = price;
@@ -337,6 +347,8 @@ router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 					});
 				}
 			}
+
+			// Check if the details modif are right type and length and update them
 			if (brand) {
 				if (typeof brand === "string" && brand.length <= titleMaxStrLength) {
 					offerToModify.product_details[0] = { MARQUE: brand };
@@ -393,23 +405,68 @@ router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 					});
 				}
 			}
+
+			// Check if there is image or pictures key and update them in cloudinary and in the DDB
 			if (req.files) {
-				const newFile = await cloudinaryFunc.deleteCreateFiles(
-					req.files.image,
-					offerToModify.product_image.public_id
-				);
+				if (req.files.image) {
+					const newFile = await cloudinaryFunc.deleteCreateFiles(
+						req.files.image,
+						offerToModify.product_image.public_id
+					);
 
-				const fileModification = await cloudinaryFunc.createFolder(
-					offerToModify._id,
-					newFile.public_id,
-					offerFolderRootPath
-				);
+					const fileModification = await cloudinaryFunc.createFolder(
+						offerToModify._id,
+						newFile.public_id,
+						offerFolderRootPath
+					);
 
-				offerToModify.product_image = fileModification;
+					offerToModify.product_image = fileModification;
+				}
+				if (req.files.pictures) {
+					// If there is more than one pictures (Array of picture)
+					if (Array.isArray(req.files.pictures)) {
+						const arrayPictures = [...req.files.pictures];
+
+						// Delete the previous pictures and upload the new ones to Cloudinary then return the result Objects
+						const picturesFilesPromises = arrayPictures.map((picture) => {
+							return cloudinaryFunc.deleteCreateFiles(
+								picture,
+								offerToModify.product_pictures.public_id
+							);
+						});
+						const picturesToFile = await Promise.all(picturesFilesPromises);
+
+						// Move them to the the folder with the offer's ID name
+						const picturesFolderPromises = picturesToFile.map((picture) => {
+							return cloudinaryFunc.createFolder(
+								offerToModify._id,
+								picture.public_id,
+								offerFolderRootPath
+							);
+						});
+						const picturesToUpload = await Promise.all(picturesFolderPromises);
+
+						// Add them to offer created in DDB
+						offerToModify.product_pictures = picturesToUpload;
+					} else {
+						// Same process but if there is only one picture
+						const newFile = await cloudinaryFunc.deleteCreateFiles(
+							req.files.pictures,
+							offerToModify.product_pictures.public_id
+						);
+
+						const fileModification = await cloudinaryFunc.createFolder(
+							offerToModify._id,
+							newFile.public_id,
+							offerFolderRootPath
+						);
+
+						offerToModify.product_pictures = fileModification;
+					}
+				}
 			}
 
 			await offerToModify.save();
-
 			return res.status(200).json(offerToModify);
 		}
 	} catch (error) {
@@ -417,25 +474,27 @@ router.put("/offer/:id", isAuthenticated, fileUpload(), async (req, res) => {
 	}
 });
 
-/**
- * Delete an existing offer
- */
+// Deleting an offer ------------------------------------------------------------------------------------------------
 router.delete("/offer/:id", isAuthenticated, async (req, res) => {
 	try {
 		const offerID = req.params.id;
 
+		// Check if the ID format is valid
 		if (mongoose.isObjectIdOrHexString(offerID) === false) {
 			return res.status(400).json({
 				message: "Please use a valid Id.",
 			});
 		}
 
+		// Search for the offer in DDB
 		const offerToDelete = await Offer.findOne({ _id: offerID }).populate(
 			"owner"
 		);
 
+		// If the offer doesn't exist -> error
 		if (!offerToDelete) {
 			return res.status(404).json({ message: "This offer doesn't exist." });
+			// If the user's token is not linked to this offer -> error
 		} else if (offerToDelete.owner.token !== req.user.token) {
 			return res.status(401).json({ error: "Unauthorized to do this action." });
 		} else {
