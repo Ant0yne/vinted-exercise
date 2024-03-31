@@ -5,9 +5,6 @@ const isAuthenticated = async (req, res, next) => {
 		const user = await User.findOne({
 			token: req.headers.authorization.replace("Bearer ", ""),
 		});
-		// const user = await User.findOne({
-		// 	token: req.headers.authorization.replace("Bearer ", ""),
-		// }).select("account");
 
 		if (!user) {
 			return res.status(401).json({ error: "Unauthorized to do this action." });

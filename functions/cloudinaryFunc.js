@@ -39,8 +39,6 @@ const deleteCreateFiles = async (fileToUpload, fileToDeleteID) => {
 const middlewareFileCheck = async (req, res, next) => {
 	try {
 		if (req.files) {
-			// console.log("Etape 1 : ", req.files.picture);
-			// req.fileUploaded = await deleteCreateFiles(req.files.picture, null);
 			return next();
 		} else {
 			return res

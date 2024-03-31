@@ -3,34 +3,46 @@
 const express = require("express");
 const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
+
+// MODELS
 const User = require("../models/User");
 const Offer = require("../models/Offer");
-// return the user document (from MDB) of the user in req.user
+
+// check user's token to authenticate them
 const isAuthenticated = require("../middlewares/isAuthenticated");
+// Manage all image uploading, deleting, ...
 const cloudinaryFunc = require("../functions/cloudinaryFunc");
+// Check if an Object is empty
 const isObjectPopulate = require("../functions/isObjectPopulate");
 
 const router = express.Router();
 
+// Max price range for offers
 const maxPriceOfferGlobal = 100000;
+// Max page displayed
+const maxPageNumber = 1000;
+// Max length for title (same for details) and description
 const titleMaxStrLength = 50;
 const descrMaxStrLength = 500;
+// The path to move the image for this project on Cloudinary
 const offerFolderRootPath = "vinted/offers";
-const maxPageNumber = 1000;
 
-/**
- * Create an offer
- */
+// Create an offer -----------------------------------------------------------------------------------------
 router.post(
 	"/offer/publish",
 	isAuthenticated,
 	fileUpload(),
+	// Check if there is the image key, else error
 	cloudinaryFunc.middlewareFileCheck,
 	async (req, res) => {
 		try {
 			let { title, description, price, condition, city, brand, size, color } =
 				req.body;
 
+			// Conditions of errors
+			// Missing body parameters
+			// Wrong type
+			// Above all the max variables define on top of route
 			if (
 				title === undefined ||
 				typeof title !== "string" ||
@@ -59,6 +71,8 @@ router.post(
 				});
 			}
 
+			// Default value for none required paramaters
+			// Then create an Array of Object with it
 			if (condition === undefined) {
 				condition = "";
 			}
@@ -71,7 +85,6 @@ router.post(
 			if (color === undefined) {
 				color = "";
 			}
-
 			const detailsBody = [
 				{ MARQUE: brand },
 				{ TAILLE: size },
@@ -80,12 +93,13 @@ router.post(
 				{ EMPLACEMENT: city },
 			];
 
+			// Upload the image to Cloudinary then return the result object
 			const fileUploaded = await cloudinaryFunc.deleteCreateFiles(
 				req.files.image,
 				null
 			);
 
-			// console.log("Etape 3 : ", fileUploaded);
+			// Create the offer in DDB
 			const newOffer = new Offer({
 				product_name: title,
 				product_description: description,
@@ -95,25 +109,29 @@ router.post(
 				owner: req.user,
 			});
 
-			// console.log("Etape 4 : ", newOffer.product_image.public_id);
-
+			// Move the image to the a folder with the offer's ID name
 			const filMoveToFolder = await cloudinaryFunc.createFolder(
 				newOffer._id,
 				newOffer.product_image.public_id,
 				offerFolderRootPath
 			);
 
+			// Replace the image in offer with the one moved
 			newOffer.product_image = filMoveToFolder;
 
+			// Check if there is additional pictures sent for the offer
 			if (req.files.pictures) {
-				console.log(Array.isArray(req.files.pictures));
+				// If there is more than one (Array of picture)
 				if (Array.isArray(req.files.pictures)) {
 					const arrayPictures = [...req.files.pictures];
+
+					// Upload the pictures to Cloudinary then return the result Objects
 					const picturesFilesPromises = arrayPictures.map((picture) => {
 						return cloudinaryFunc.deleteCreateFiles(picture, null);
 					});
 					const picturesToFile = await Promise.all(picturesFilesPromises);
 
+					// Move them to the the folder with the offer's ID name
 					const picturesFolderPromises = picturesToFile.map((picture) => {
 						return cloudinaryFunc.createFolder(
 							newOffer._id,
@@ -122,9 +140,11 @@ router.post(
 						);
 					});
 
+					// Add them to offer created in DDB
 					const picturesToUpload = await Promise.all(picturesFolderPromises);
 					newOffer.product_pictures = picturesToUpload;
 				} else {
+					// Same process but if there is only one picture
 					const fileUploaded = await cloudinaryFunc.deleteCreateFiles(
 						req.files.pictures,
 						null
@@ -139,10 +159,7 @@ router.post(
 				}
 			}
 
-			// console.log("Etape 5 : ", filMoveToFolder);
-
 			await newOffer.save();
-
 			await newOffer.populate("owner", "account");
 
 			return res.status(200).json(newOffer);
@@ -152,18 +169,18 @@ router.post(
 	}
 );
 
-/**
- *  Return an array with the offers (according to the query) from the DB
- */
+// Offers displayed according to query --------------------------------------------------------------------------
 router.get("/offers", async (req, res) => {
 	try {
+		// All the potential query received
 		let { title, description, priceMin, priceMax, sort, page, limit } =
 			req.query;
-		// const limitPerPage = 5;
-		const limitPerPage = limit;
+		// Sort by default
 		let sortFinalValue = "desc";
-		const skipFinalValue = (page - 1) * limitPerPage;
+		// what offers are displayed according to the limit and the page
+		const skipFinalValue = (page - 1) * limit;
 
+		// Set the default price range : 0 to maxPriceOfferGlobal
 		if (!priceMin || priceMin < 0 || priceMin > maxPriceOfferGlobal) {
 			priceMin = 0;
 		}
@@ -171,21 +188,25 @@ router.get("/offers", async (req, res) => {
 			priceMax = maxPriceOfferGlobal;
 		}
 
-		// console.log(priceMin, priceMax);
+		// invert the price range value if the minimum value sent is greater that the maximum value
 		if (priceMin > priceMax) {
 			let temp = priceMin;
 			priceMin = priceMax;
 			priceMax = temp;
-			// console.log("priceMin : ", priceMin);
-			// console.log("priceMax : ", priceMax);
 		}
+
+		// If no page are query or if it is above the maxPageNumber, display the first page
 		if (!page || page > maxPageNumber) {
 			page = 1;
 		}
+
+		// Replace the sort by default if query and valid
 		if (sort && (sort === "price-desc" || sort === "price-asc")) {
 			sortFinalValue = sort.replace("price-", "");
 		}
 
+		// Conditions of errors
+		// if wrong type of query
 		if (
 			(title && typeof title !== "string") ||
 			(description && typeof description !== "string") ||
@@ -197,6 +218,8 @@ router.get("/offers", async (req, res) => {
 				message: "Please use the right type of query.",
 			});
 		}
+
+		// Search in DDB all offers regarding the query
 		const offerList = await Offer.find({
 			product_name: new RegExp(title, "i"),
 			product_description: new RegExp(description, "i"),
@@ -205,16 +228,15 @@ router.get("/offers", async (req, res) => {
 			.populate("owner", "account")
 			.sort({ product_price: sortFinalValue })
 			.skip(skipFinalValue)
-			.limit(limitPerPage);
-		// .select("product_name product_description product_price owner -_id");
+			.limit(limit);
 
+		// If no offer found
 		if (offerList.length <= 0) {
 			return res
 				.status(400)
 				.json({ message: "No offer can be found with those parameters." });
 		} else {
 			const returnOfferList = { count: offerList.length, offers: offerList };
-			// console.log(`Le find renvoie ${offerList.length} offres`);
 			return res.status(200).json(returnOfferList);
 		}
 	} catch (error) {
