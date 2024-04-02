@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 // ROUTES
 const userRoutes = require("./routes/user");
 const offerRoutes = require("./routes/offer");
+const paymentRoutes = require("./routes/payment");
 
 // A try catch to contact the DDB
 mongoose
@@ -16,6 +17,7 @@ mongoose
 		app.use(express.json());
 		app.use(userRoutes);
 		app.use(offerRoutes);
+		app.use(paymentRoutes);
 
 		app.all("/", (req, res) => {
 			res.status(200).json({
