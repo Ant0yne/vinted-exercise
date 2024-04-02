@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 // MODELS
 const User = require("../models/User");
 const Offer = require("../models/Offer");
+const Payment = require("../models/Payment");
 
 // check user's token to authenticate them
 const isAuthenticated = require("../middlewares/isAuthenticated");

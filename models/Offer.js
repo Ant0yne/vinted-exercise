@@ -13,6 +13,7 @@ const Offer = mongoose.model("Offer", {
 		ref: "User",
 		required: true,
 	},
+	isPurchased: Boolean,
 });
 
 module.exports = Offer;

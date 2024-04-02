@@ -5,8 +5,11 @@ const fileUpload = require("express-fileupload");
 const SHA256 = require("crypto-js/sha256");
 const encBase64 = require("crypto-js/enc-base64");
 const uid2 = require("uid2");
+
+// MODELS
 const User = require("../models/User");
 const Offer = require("../models/Offer");
+const Payment = require("../models/Payment");
 
 // Manage all image uploading, deleting, ...
 const cloudinaryFunc = require("../functions/cloudinaryFunc");

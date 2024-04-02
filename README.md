@@ -187,11 +187,32 @@ Here is the _params_ parameters to send with the request :
 
 [MongoDB ObjectId](https://www.mongodb.com/docs/manual/reference/bson-types/#objectid)
 
+### Payment
+
+- POST - _Buy an offer_
+
+`https://site--vinted-backend-exercise--spyfkvx5gdbh.code.run/payment`
+
+This is the request to buy an offer (using stripe)
+Here are the _body_ parameters to send with the request :
+
+`title`  
+**-REQUIRED-**  
+String
+
+`amount`  
+**-REQUIRED-**  
+Number
+
 ## Work in progress
 
 - delete all the offer's pictures when the offer is deleted
 - change an offer's pictures (add one or more, delete one or more)
 - ignore case for username and email
+- when an offer is cre
+- when a payment is done, create a Payment document in DDB
+- when a payment is done, retreive the id by body then update the key "isPurchased" for the offer document in DDB
+- when a payment is done, retreive the id by body then update the key "purchased" for the user with the payment info
+- dryer code (repetition, create some module, ...)
 - add password rules (uppercase, lowercase, symbol, ...)
 - check the type of file (img? video? ...?)
-- dryer code (repetition, create some module, ...)

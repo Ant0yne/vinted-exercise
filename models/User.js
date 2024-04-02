@@ -10,6 +10,7 @@ const User = mongoose.model("User", {
 	hash: { type: String, required: true },
 	token: { type: String, required: true },
 	newsletter: { type: Boolean, default: false },
+	purchases: Array,
 });
 
 module.exports = User;

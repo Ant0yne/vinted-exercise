@@ -3,6 +3,12 @@
 const express = require("express");
 const stripe = require("stripe")(process.env.STRIPE);
 
+// MODELS
+
+const User = require("../models/User");
+const Offer = require("../models/Offer");
+const Payment = require("../models/Payment");
+
 const router = express.Router();
 
 router.post("/payment", async (req, res) => {
